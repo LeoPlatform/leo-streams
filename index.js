@@ -11,6 +11,7 @@ const moment = require("moment");
 const backoff = require("backoff");
 const PassThrough = stream.PassThrough;
 const logger = require('leo-logger');
+const merge = require('lodash.merge');
 
 let ls = module.exports = {
 	commandWrap: function (opts, func) {
@@ -18,7 +19,7 @@ let ls = module.exports = {
 			func = opts;
 			opts = {};
 		}
-		opts = Object.assign({
+		opts = merge({
 			hasCommands: '__cmd',
 			ignoreCommands: {}
 		}, opts || {});
@@ -115,7 +116,7 @@ let ls = module.exports = {
 		return ls.through(watchCommands, (obj, done) => done(null, obj));
 	},
 	buffer: (opts, each, emit, flush) => {
-		opts = Object.assign({
+		opts = merge({
 			time: {
 				seconds: 10
 			},
@@ -179,7 +180,7 @@ let ls = module.exports = {
 			}
 		}
 
-		let stream = streamType(Object.assign({
+		let stream = streamType(merge({
 			cmdFlush: (obj, done) => {
 				doEmit(false, () => {
 					//want to add the flush statistics and send it further
@@ -230,18 +231,18 @@ let ls = module.exports = {
 			doEmit(false, done);
 		};
 		stream.updateLimits = (limits) => {
-			opts = Object.assign(opts, limits);
+			opts = merge(opts, limits);
 		};
 		return stream;
 	},
 	bufferBackoff: function (each, emit, retryOpts, opts) {
-		retryOpts = Object.assign({
+		retryOpts = merge({
 			randomisationFactor: 0,
 			initialDelay: 1,
 			maxDelay: 1000,
 			failAfter: 10
 		}, retryOpts);
-		opts = Object.assign({
+		opts = merge({
 			records: 25,
 			size: 1024 * 1024 * 2,
 			time: {
@@ -355,7 +356,7 @@ let ls = module.exports = {
 		}));
 	},
 	fromCSV: function (fieldList, opts) {
-		opts = Object.assign({
+		opts = merge({
 			headers: fieldList,
 			ignoreEmpty: true,
 			trim: true,
@@ -381,7 +382,7 @@ let ls = module.exports = {
 		return pumpify(parse, transform);
 	},
 	toCSV: (fieldList, opts) => {
-		opts = Object.assign({
+		opts = merge({
 			nullValue: "\\N",
 			delimiter: ',',
 			escape: '"'
@@ -407,10 +408,10 @@ let ls = module.exports = {
 		});
 	},
 	log: function (prefix) {
-		let log = console.log;
+		let log = logger.log;
 		if (prefix) {
 			log = function () {
-				console.log.apply(null, [prefix].concat(Array.prototype.slice.call(arguments)));
+				logger.log.apply(null, [prefix].concat(Array.prototype.slice.call(arguments)));
 			};
 		}
 		return ls.through({
@@ -456,7 +457,7 @@ let ls = module.exports = {
 		let start = Date.now();
 		return ls.through((o, d) => {
 			count++;
-			count % records === 0 && console.log(`${label}${count} ${Date.now() - start} ${o.eid || ""}`);
+			count % records === 0 && logger.log(`${label}${count} ${Date.now() - start} ${o.eid || ""}`);
 			d(null, o);
 		})
 	},
@@ -466,7 +467,7 @@ let ls = module.exports = {
 				count: opts
 			};
 		}
-		opts = Object.assign({
+		opts = merge({
 			count: undefined,
 			bytes: undefined,
 			time: undefined,
