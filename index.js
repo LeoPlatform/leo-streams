@@ -10,7 +10,7 @@ const stream = require("stream");
 const moment = require("moment");
 const backoff = require("backoff");
 const PassThrough = stream.PassThrough;
-const logger = require('leo-logger');
+const logger = require('leo-logger')('leo-streams');
 const merge = require('lodash.merge');
 
 let ls = module.exports = {
@@ -408,10 +408,10 @@ let ls = module.exports = {
 		});
 	},
 	log: function (prefix) {
-		let log = logger.log;
+		let log = console.log;
 		if (prefix) {
 			log = function () {
-				logger.log.apply(null, [prefix].concat(Array.prototype.slice.call(arguments)));
+				console.log.apply(null, [prefix].concat(Array.prototype.slice.call(arguments)));
 			};
 		}
 		return ls.through({
@@ -457,7 +457,7 @@ let ls = module.exports = {
 		let start = Date.now();
 		return ls.through((o, d) => {
 			count++;
-			count % records === 0 && logger.log(`${label}${count} ${Date.now() - start} ${o.eid || ""}`);
+			count % records === 0 && console.log(`${label}${count} ${Date.now() - start} ${o.eid || ""}`);
 			d(null, o);
 		})
 	},
