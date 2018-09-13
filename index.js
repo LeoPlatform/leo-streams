@@ -14,7 +14,7 @@ const logger = require('leo-logger')('leo-streams');
 const merge = require('lodash.merge');
 
 let ls = module.exports = {
-	commandWrap: function (opts, func) {
+	commandWrap: function(opts, func) {
 		if (typeof opts === "function") {
 			func = opts;
 			opts = {};
@@ -45,7 +45,7 @@ let ls = module.exports = {
 		let throughCommand;
 		//They need to specify false to turn this off
 		if (opts.hasCommands !== false) {
-			throughCommand = function (obj, enc, done) {
+			throughCommand = function(obj, enc, done) {
 				//Only available on through streams (not on write streams);
 				let push = this.push && this.push.bind(this);
 				try {
@@ -65,7 +65,7 @@ let ls = module.exports = {
 				}
 			};
 		} else {
-			throughCommand = function (obj, enc, done) {
+			throughCommand = function(obj, enc, done) {
 				//Only available on through streams (not on write streams);
 				let push = this.push && this.push.bind(this);
 				try {
@@ -88,7 +88,7 @@ let ls = module.exports = {
 			func = opts;
 			opts = undefined;
 		}
-		return through(opts, ls.commandWrap(opts, func), flush ? function (done) {
+		return through(opts, ls.commandWrap(opts, func), flush ? function(done) {
 			flush.call(this, done, this.push.bind(this));
 		} : null);
 	},
@@ -98,7 +98,7 @@ let ls = module.exports = {
 			func = opts;
 			opts = undefined;
 		}
-		return write.obj(opts, ls.commandWrap(opts, func), flush ? function (done) {
+		return write.obj(opts, ls.commandWrap(opts, func), flush ? function(done) {
 			flush.call(this, done);
 		} : null);
 	},
@@ -188,7 +188,7 @@ let ls = module.exports = {
 				});
 			},
 			highWaterMark: opts.highWaterMark || undefined
-		}, opts.commands), function (o, done) {
+		}, opts.commands), function(o, done) {
 			each.call(stream, o, (err, obj) => {
 				if (obj) {
 					if (obj.reset === true) {
@@ -227,7 +227,7 @@ let ls = module.exports = {
 			});
 		});
 		stream.reset = reset;
-		stream.flush = function (done) {
+		stream.flush = function(done) {
 			doEmit(false, done);
 		};
 		stream.updateLimits = (limits) => {
@@ -235,7 +235,7 @@ let ls = module.exports = {
 		};
 		return stream;
 	},
-	bufferBackoff: function (each, emit, retryOpts, opts) {
+	bufferBackoff: function(each, emit, retryOpts, opts) {
 		retryOpts = merge({
 			randomisationFactor: 0,
 			initialDelay: 1,
@@ -266,11 +266,11 @@ let ls = module.exports = {
 			maxDelay: 1000
 		});
 		retry.failAfter(retryOpts.failAfter);
-		retry.success = function () {
+		retry.success = function() {
 			retry.reset();
 			retry.emit("success");
 		};
-		retry.run = function (callback) {
+		retry.run = function(callback) {
 			let fail = (err) => {
 				retry.removeListener('success', success);
 				callback(lastError || 'failed');
@@ -283,7 +283,7 @@ let ls = module.exports = {
 			retry.once('fail', fail).once('success', success);
 			retry.backoff();
 		};
-		retry.on('ready', function (number, delay) {
+		retry.on('ready', function(number, delay) {
 			if (records.length === 0) {
 				retry.success();
 			} else {
@@ -355,7 +355,7 @@ let ls = module.exports = {
 			}
 		}));
 	},
-	fromCSV: function (fieldList, opts) {
+	fromCSV: function(fieldList, opts) {
 		opts = merge({
 			headers: fieldList,
 			ignoreEmpty: true,
@@ -392,7 +392,7 @@ let ls = module.exports = {
 			delimiter: opts.delimiter,
 			escape: opts.escape,
 			quote: opts.quote,
-			transform: function (row) {
+			transform: function(row) {
 				for (let key in row) {
 					if (row[key] === null || row[key] === undefined) {
 						row[key] = opts.nullValue;
@@ -407,10 +407,10 @@ let ls = module.exports = {
 			}
 		});
 	},
-	log: function (prefix) {
+	log: function(prefix) {
 		let log = console.log;
 		if (prefix) {
-			log = function () {
+			log = function() {
 				console.log.apply(null, [prefix].concat(Array.prototype.slice.call(arguments)));
 			};
 		}
@@ -432,7 +432,7 @@ let ls = module.exports = {
 			callback(null, obj);
 		});
 	},
-	devnull: function (shouldLog = false) {
+	devnull: function(shouldLog = false) {
 		let s = new stream.Writable({
 			objectMode: true,
 			write(chunk, encoding, callback) {
@@ -445,23 +445,39 @@ let ls = module.exports = {
 			return s;
 		}
 	},
-	counter: function (label, records = 10000) {
-		if (typeof label === Number) {
+	counter: function(label, records) {
+		return ls.count.call(this, label, records);
+	},
+	count: function(label, records = 10000) {
+		if (typeof label === "number") {
 			records = label;
 			label = null;
 		}
 		if (label != null) {
 			label += " ";
+		} else {
+			label = "";
 		}
 		let count = 0;
+		let c = 0;
 		let start = Date.now();
+		let last = start;
 		return ls.through((o, d) => {
-			count++;
-			count % records === 0 && console.log(`${label}${count} ${Date.now() - start} ${o.eid || ""}`);
+			let add = (o.correlation_id && o.correlation_id.units) || 1;
+			count += add;
+			c += add;
+			if (c >= records) {
+				console.log(`${label}Units: ${c}\tElapsed: ${Date.now() - last}ms ${o.eid || ""}`);
+				last = Date.now()
+				c = 0;
+			}
 			d(null, o);
+		}, (d) => {
+			console.log(`${label}Total Units: ${count}\tTotal Elapsed: ${Date.now() - start}ms`);
+			d();
 		})
 	},
-	batch: function (opts) {
+	batch: function(opts) {
 		if (typeof opts === "number") {
 			opts = {
 				count: opts
@@ -511,7 +527,7 @@ let ls = module.exports = {
 			buffer: opts.buffer,
 			highWaterMark: opts.highWaterMark,
 			debug: opts.debug
-		}, function (obj, callback) {
+		}, function(obj, callback) {
 			let size = 0;
 			if (typeof obj === "string") {
 				size += Buffer.byteLength(obj);
