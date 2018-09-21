@@ -117,7 +117,7 @@ let ls = module.exports = {
 	},
 	buffer: (opts, each, emit, flush) => {
 		opts = merge({
-			time: {
+			time: opts && opts.time || {
 				seconds: 10
 			},
 			size: 1024 * 200,
@@ -245,7 +245,7 @@ let ls = module.exports = {
 		opts = merge({
 			records: 25,
 			size: 1024 * 1024 * 2,
-			time: {
+			time: opts.time || {
 				seconds: 2
 			}
 		}, opts || {});
