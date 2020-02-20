@@ -12,8 +12,10 @@ const backoff = require("backoff");
 const PassThrough = stream.PassThrough;
 const logger = require('leo-logger')('leo-streams');
 const merge = require('lodash.merge');
+const promiseStreams = require('./lib/promisestreams');
 
 let ls = module.exports = {
+	promiseStreams,
 	commandWrap: function(opts, func) {
 		if (typeof opts === "function") {
 			func = opts;
