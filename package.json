@@ -1,6 +1,6 @@
 {
   "name": "leo-streams",
-  "version": "1.1.2",
+  "version": "1.2.1",
   "description": "Leo Streams",
   "main": "index.js",
   "directories": {
