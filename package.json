@@ -24,7 +24,7 @@
   "dependencies": {
     "backoff": "^2.5.0",
     "fast-csv": "^2.4.1",
-    "leo-logger": "^1.0.1",
+    "leo-logger": "^1.0.3",
     "lodash.merge": "^4.6.2",
     "moment": "^2.22.2",
     "pump": "^3.0.0",
